@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GD Shortener | Encurtador de URL</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --accent: #a855f7;
+            --success: #10b981;
+            --danger: #ef4444;
+            --light: #f9fafb;
+            --dark: #1f2937;
+            --gray: #6b7280;
+            --border-radius: 20px;
+            --shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            --transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0f172a, #1e293b, #334155);
+            min-height: 100vh;
+            color: var(--light);
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 25% 25%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 75% 75%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+        }
+
+        /* Floating Elements */
+        .floating-element {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.4;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .floating-1 {
+            width: 400px;
+            height: 400px;
+            background: rgba(99, 102, 241, 0.3);
+            top: 5%;
+            left: 5%;
+            animation-delay: 0s;
+        }
+
+        .floating-2 {
+            width: 350px;
+            height: 350px;
+            background: rgba(139, 92, 246, 0.3);
+            bottom: 10%;
+            right: 5%;
+            animation-delay: -7s;
+        }
+
+        .floating-3 {
+            width: 300px;
+            height: 300px;
+            background: rgba(168, 85, 247, 0.3);
+            bottom: 25%;
+            left: 10%;
+            animation-delay: -14s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            25% {
+                transform: translate(-30px, 30px) rotate(90deg);
+            }
+            50% {
+                transform: translate(0, 60px) rotate(180deg);
+            }
+            75% {
+                transform: translate(30px, 30px) rotate(270deg);
+            }
+        }
+
+        /* Header Styles */
+        header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px 0;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo-icon {
+            font-size: 3.5rem;
+            color: var(--primary);
+            text-shadow: 0 0 30px rgba(99, 102, 241, 0.7);
+            position: relative;
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                text-shadow: 0 0 30px rgba(99, 102, 241, 0.7);
+            }
+            50% {
+                transform: scale(1.1);
+                text-shadow: 0 0 40px rgba(99, 102, 241, 0.9);
+            }
+        }
+
+        .logo-text {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -1.5px;
+            text-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Main Content */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 50px;
+            margin-bottom: 60px;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* URL Form Card */
+        .url-card {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(25px);
+            border-radius: var(--border-radius);
+            padding: 60px;
+            box-shadow: var(--shadow);
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .url-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.6s ease;
+        }
+
+        .url-card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .url-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .card-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 50px;
+            color: var(--light);
+            position: relative;
+            padding-bottom: 25px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .card-title i {
+            color: var(--primary);
+            font-size: 2.5rem;
+            text-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+        }
+
+        .card-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+            animation: expand 1.2s ease-out forwards;
+        }
+
+        @keyframes expand {
+            from {
+                width: 0;
+            }
+            to {
+                width: 120px;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 20px;
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: var(--light);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        label i {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .url-input-container {
+            position: relative;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .url-input {
+            width: 100%;
+            padding: 30px 70px 30px 30px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-radius: 18px;
+            font-size: 1.3rem;
+            background: rgba(15, 23, 42, 0.6);
+            color: var(--light);
+            transition: var(--transition);
+            outline: none;
+            font-family: inherit;
+            box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .url-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 5px rgba(99, 102, 241, 0.3), inset 0 4px 20px rgba(0, 0, 0, 0.4);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        .url-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+            font-weight: 500;
+        }
+
+        .clear-btn {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(239, 68, 68, 0.3);
+            color: var(--danger);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            opacity: 0;
+            visibility: hidden;
+            font-size: 1.2rem;
+        }
+
+        .clear-btn.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .clear-btn:hover {
+            background: rgba(239, 68, 68, 0.5);
+            transform: translateY(-50%) scale(1.15);
+        }
+
+        .error {
+            color: var(--danger);
+            font-size: 1.2rem;
+            margin-top: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            background: rgba(239, 68, 68, 0.15);
+            border-radius: 15px;
+            border-left: 5px solid var(--danger);
+            animation: shake 0.6s ease-in-out;
+            display: none;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .error i {
+            font-size: 1.6rem;
+        }
+
+        .submit-btn {
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+            color: white;
+            border: none;
+            padding: 30px 60px;
+            border-radius: 60px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            position: relative;
+            overflow: hidden;
+            display: block;
+            margin: 0 auto;
+            width: fit-content;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .submit-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: 1s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-8px) scale(1.05);
+            box-shadow: 0 20px 50px rgba(99, 102, 241, 0.7);
+        }
+
+        .submit-btn:hover::before {
+            left: 100%;
+        }
+
+        .submit-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 35px;
+            height: 35px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            vertical-align: middle;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Result Section */
+        .result-container {
+            background: rgba(16, 185, 129, 0.2);
+            backdrop-filter: blur(25px);
+            border-radius: var(--border-radius);
+            padding: 60px;
+            box-shadow: var(--shadow);
+            border: 4px solid rgba(16, 185, 129, 0.3);
+            display: none;
+            animation: fadeInUp 1s ease;
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            max-width: 800px;
+            z-index: 10;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(60px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .result-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, var(--success), var(--primary), var(--secondary));
+        }
+
+        .result-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 50px;
+            color: var(--light);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            position: relative;
+            padding-bottom: 25px;
+        }
+
+        .result-title i {
+            color: var(--success);
+            font-size: 2.5rem;
+            text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        }
+
+        .result-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 5px;
+            background: linear-gradient(90deg, var(--success), var(--primary));
+            border-radius: 3px;
+        }
+
+        .result-content {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 768px) {
+            .result-content {
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        .short-url-container {
+            background: rgba(15, 23, 42, 0.8);
+            border: 4px solid rgba(16, 185, 129, 0.6);
+            border-radius: 20px;
+            padding: 40px;
+            font-size: 1.5rem;
+            font-weight: 800;
+            word-break: break-all;
+            flex: 1;
+            text-align: center;
+            color: var(--success);
+            box-shadow: inset 0 0 30px rgba(16, 185, 129, 0.4);
+            position: relative;
+            transition: var(--transition);
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 1px;
+        }
+
+        .short-url-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(16, 185, 129, 0.3), transparent);
+            animation: shine 4s ease-in-out infinite;
+        }
+
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-50%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(-50%) rotate(45deg); }
+        }
+
+        .short-url-container:hover {
+            transform: scale(1.05);
+            border-color: var(--success);
+            box-shadow: inset 0 0 40px rgba(16, 185, 129, 0.6), 0 15px 40px rgba(16, 185, 129, 0.3);
+        }
+
+        .short-url {
+            color: inherit;
+            text-decoration: none;
+            display: block;
+        }
+
+        .copy-btn {
+            background: linear-gradient(90deg, var(--success), #059669, #047857);
+            color: white;
+            border: none;
+            padding: 30px 50px;
+            border-radius: 60px;
+            font-size: 1.4rem;
+            font-weight: 800;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 15px 40px rgba(16, 185, 129, 0.6);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            position: relative;
+            overflow: hidden;
+            min-width: 250px;
+        }
+
+        .copy-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: 1s;
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-8px) scale(1.08);
+            box-shadow: 0 20px 50px rgba(16, 185, 129, 0.8);
+            background: linear-gradient(90deg, #059669, #047857, #065f46);
+        }
+
+        .copy-btn:hover::before {
+            left: 100%;
+        }
+
+        .copy-btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .success-message {
+            color: var(--success);
+            font-weight: 800;
+            margin-top: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            font-size: 1.3rem;
+            padding: 25px;
+            background: rgba(16, 185, 129, 0.15);
+            border-radius: 20px;
+            border-left: 6px solid var(--success);
+            animation: fadeIn 0.8s ease;
+        }
+
+        /* History Section */
+        .history-section {
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .history-container {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(25px);
+            border-radius: var(--border-radius);
+            padding: 60px;
+            box-shadow: var(--shadow);
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            display: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .history-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+        }
+
+        .history-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 50px;
+            color: var(--light);
+            text-align: center;
+            position: relative;
+            padding-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .history-title i {
+            color: var(--primary);
+            font-size: 2.5rem;
+        }
+
+        .history-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 3px;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .history-item {
+            background: rgba(15, 23, 42, 0.8);
+            border-radius: 20px;
+            padding: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .history-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 10px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+        }
+
+        .history-item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .history-date {
+            font-size: 1.1rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-style: italic;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 12px 25px;
+            border-radius: 50px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .history-original, .history-short {
+            margin-bottom: 25px;
+        }
+
+        .history-label {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 700;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .history-label i {
+            color: var(--primary);
+            font-size: 1.4rem;
+        }
+
+        .history-url {
+            word-break: break-all;
+            font-size: 1.2rem;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            transition: var(--transition);
+            font-family: 'Courier New', monospace;
+            text-align: center;
+        }
+
+        .original-url {
+            color: #93c5fd;
+            text-decoration: none;
+            display: block;
+        }
+
+        .original-url:hover {
+            color: var(--light);
+            background: rgba(147, 197, 253, 0.2);
+            border-color: rgba(147, 197, 253, 0.4);
+        }
+
+        .shortened-url {
+            color: var(--success);
+            font-weight: 800;
+            text-decoration: none;
+            display: block;
+        }
+
+        .shortened-url:hover {
+            color: var(--light);
+            background: rgba(16, 185, 129, 0.25);
+            border-color: rgba(16, 185, 129, 0.6);
+        }
+
+        .history-actions {
+            display: flex;
+            gap: 25px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .history-copy-btn {
+            background: rgba(16, 185, 129, 0.3);
+            color: var(--success);
+            border: 3px solid rgba(16, 185, 129, 0.5);
+            padding: 18px 40px;
+            border-radius: 60px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-width: 200px;
+            justify-content: center;
+        }
+
+        .history-copy-btn:hover {
+            background: rgba(16, 185, 129, 0.4);
+            transform: translateY(-8px);
+            border-color: var(--success);
+            box-shadow: 0 15px 35px rgba(16, 185, 129, 0.4);
+        }
+
+        .history-delete-btn {
+            background: rgba(239, 68, 68, 0.3);
+            color: var(--danger);
+            border: 3px solid rgba(239, 68, 68, 0.5);
+            padding: 18px 40px;
+            border-radius: 60px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: var(--transition);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            min-width: 200px;
+            justify-content: center;
+        }
+
+        .history-delete-btn:hover {
+            background: rgba(239, 68, 68, 0.4);
+            transform: translateY(-8px);
+            border-color: var(--danger);
+            box-shadow: 0 15px 35px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 50px 20px;
+            margin-top: 40px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.1rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .footer-text {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .footer-bottom {
+            padding-top: 30px;
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.5);
+            border-top: 2px solid rgba(255, 255, 255, 0.1);
+            max-width: 600px;
+            margin: 30px auto 0;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .logo-text {
+                font-size: 2.5rem;
+            }
+
+            .logo-icon {
+                font-size: 2.8rem;
+            }
+
+            .url-card, .result-container, .history-container {
+                padding: 40px 25px;
+            }
+
+            .card-title, .result-title, .history-title {
+                font-size: 2rem;
+                gap: 15px;
+            }
+
+            .card-title i, .result-title i, .history-title i {
+                font-size: 2rem;
+            }
+
+            .url-input {
+                padding: 25px 60px 25px 25px;
+                font-size: 1.2rem;
+            }
+
+            .submit-btn, .copy-btn {
+                padding: 25px 45px;
+                font-size: 1.3rem;
+            }
+
+            .short-url-container {
+                padding: 30px;
+                font-size: 1.3rem;
+            }
+
+            .history-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .history-copy-btn, .history-delete-btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo-text {
+                font-size: 2.2rem;
+            }
+
+            .logo-icon {
+                font-size: 2.5rem;
+            }
+
+            header {
+                padding: 30px 0;
+            }
+
+            .card-title, .result-title, .history-title {
+                font-size: 1.8rem;
+            }
+
+            .url-input {
+                padding: 22px 55px 22px 22px;
+                font-size: 1.1rem;
+            }
+
+            .submit-btn, .copy-btn {
+                padding: 22px 40px;
+                font-size: 1.2rem;
+            }
+
+            .short-url-container {
+                padding: 25px;
+                font-size: 1.2rem;
+            }
+
+            .history-item {
+                padding: 30px 20px;
+            }
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 40px;
+            right: 40px;
+            padding: 25px 40px;
+            border-radius: 20px;
+            color: white;
+            font-weight: 800;
+            font-size: 1.2rem;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            transform: translateX(100%);
+            animation: slideIn 0.6s ease forwards, fadeOut 0.5s ease 3.5s forwards;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        @keyframes slideIn {
+            to { transform: translateX(0); }
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; transform: translateX(0) scale(0.95); }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 15px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            border: 4px solid rgba(15, 23, 42, 0.5);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(90deg, var(--primary-dark), var(--secondary));
+        }
+
+        /* Animations */
+        .animate-in {
+            opacity: 0;
+            transform: translateY(50px);
+            animation: fadeInUp 1s ease forwards;
+        }
+
+        .delay-1 {
+            animation-delay: 0.3s;
+        }
+
+        .delay-2 {
+            animation-delay: 0.6s;
+        }
+
+        .delay-3 {
+            animation-delay: 0.9s;
+        }
+
+        /* Loading Animation */
+        .loading-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--light);
+        }
+
+        /* Success Animation */
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-20px);
+            }
+            60% {
+                transform: translateY(-15px);
+            }
+        }
+
+        .bounce {
+            animation: bounce 1s ease-in-out;
+        }
+
+        /* Gradient Animation */
+        .gradient-text {
+            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }
+
+        /* Floating Animation */
+        .floating {
+            animation: floating 6s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+            100% { transform: translateY(0px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="floating-element floating-1"></div>
+    <div class="floating-element floating-2"></div>
+    <div class="floating-element floating-3"></div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-bolt logo-icon floating"></i>
+                <h1 class="logo-text">GD Shortener</h1>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="url-card animate-in delay-1">
+                <h2 class="card-title"><i class="fas fa-magic"></i> Encurtar Um URL</h2>
+                <div class="form-group">
+                    <label for="url-input"><i class="fas fa-link"></i> Cole a URL que deseja encurtar</label>
+                    <div class="url-input-container">
+                        <input type="url" id="url-input" class="url-input" placeholder="https://exemplo.com/exemplo" autocomplete="off">
+                        <button id="clear-btn" class="clear-btn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div id="error-message" class="error">
+                        <i class="fas fa-exclamation-triangle"></i> <span id="error-text"></span>
+                    </div>
+                </div>
+                
+                <button id="shorten-btn" class="submit-btn pulse">
+                    <i class="fas fa-bolt"></i> Encurtar URL Agora
+                </button>
+                <div id="loading" class="loading"></div>
+            </div>
+
+            <div id="result-container" class="result-container">
+                <h2 class="result-title"><i class="fas fa-check-circle"></i> URL Encurtada com Sucesso!</h2>
+                <div class="result-content">
+                    <div class="short-url-container">
+                        <a id="short-url" class="short-url" target="_blank" rel="noopener noreferrer"></a>
+                    </div>
+                    <button id="copy-btn" class="copy-btn">
+                        <i class="fas fa-copy"></i> Copiar URL
+                    </button>
+                </div>
+                <div id="success-message" class="success-message">
+                    <i class="fas fa-sparkles"></i> Sua URL foi encurtada! Clique no link para testar.
+                </div>
+            </div>
+
+            <div class="history-section">
+                <div id="history-container" class="history-container">
+                    <h2 class="history-title"><i class="fas fa-history"></i> Histórico de URLs</h2>
+                    <div id="history-list" class="history-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p class="footer-text">GD Shortener - O jeito mais rápido de encurtar suas URLs</p>
+            <div class="footer-bottom">
+                <p>© 2024 GD Shortener. Todos os direitos reservados.</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const urlInput = document.getElementById('url-input');
+            const clearBtn = document.getElementById('clear-btn');
+            const shortenBtn = document.getElementById('shorten-btn');
+            const errorMessage = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+            const loading = document.getElementById('loading');
+            const resultContainer = document.getElementById('result-container');
+            const shortUrl = document.getElementById('short-url');
+            const copyBtn = document.getElementById('copy-btn');
+            const successMessage = document.getElementById('success-message');
+            const historyContainer = document.getElementById('history-container');
+            const historyList = document.getElementById('history-list');
+            
+            // State
+            let history = [];
+            let totalLinks = 0;
+            let todayLinks = 0;
+            let charactersSaved = 0;
+            const today = new Date().toDateString();
+
+            // Initialize from localStorage
+            initializeData();
+
+            // Event Listeners
+            setupEventListeners();
+
+            // Functions
+            function initializeData() {
+                if (typeof(Storage) !== "undefined") {
+                    const savedHistory = localStorage.getItem('gdShortenerHistory');
+                    
+                    if (savedHistory) {
+                        try {
+                            history = JSON.parse(savedHistory);
+                            renderHistory();
+                        } catch (e) {
+                            console.error('Error parsing history:', e);
+                            history = [];
+                        }
+                    }
+                }
+            }
+
+            function setupEventListeners() {
+                // Clear button
+                clearBtn.addEventListener('click', function() {
+                    urlInput.value = '';
+                    hideClearButton();
+                });
+
+                // Show/hide clear button
+                urlInput.addEventListener('input', function() {
+                    if (this.value.trim().length > 0) {
+                        clearBtn.classList.add('show');
+                    } else {
+                        clearBtn.classList.remove('show');
+                    }
+                });
+
+                // Hide error message on input
+                urlInput.addEventListener('input', function() {
+                    if (errorMessage.style.display !== 'none') {
+                        errorMessage.style.display = 'none';
+                    }
+                });
+
+                // Shorten URL
+                shortenBtn.addEventListener('click', shortenUrlHandler);
+
+                // Copy URL
+                copyBtn.addEventListener('click', function() {
+                    copyToClipboard(shortUrl.textContent);
+                });
+
+                // Enter key to submit
+                urlInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        shortenBtn.click();
+                    }
+                });
+            }
+
+            function isValidUrl(string) {
+                if (!string) return false;
+                
+                try {
+                    const url = new URL(string);
+                    return url.protocol === 'http:' || url.protocol === 'https:';
+                } catch (_) {
+                    return false;
+                }
+            }
+
+            function copyToClipboard(text) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        createToast('✅ URL copiada com sucesso!', 'success');
+                        // Add bounce animation to copy button
+                        copyBtn.classList.add('bounce');
+                        setTimeout(() => {
+                            copyBtn.classList.remove('bounce');
+                        }, 1000);
+                    }).catch(err => {
+                        console.error('Error copying text: ', err);
+                        fallbackCopyTextToClipboard(text);
+                    });
+                } else {
+                    fallbackCopyTextToClipboard(text);
+                }
+            }
+
+            function fallbackCopyTextToClipboard(text) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed";
+                textArea.style.opacity = "0";
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                try {
+                    const successful = document.execCommand('copy');
+                    if (successful) {
+                        createToast('✅ URL copiada com sucesso!', 'success');
+                    } else {
+                        createToast('❌ Falha ao copiar. Tente novamente.', 'error');
+                    }
+                } catch (err) {
+                    createToast('❌ Falha ao copiar. Pressione Ctrl+C', 'error');
+                }
+                
+                document.body.removeChild(textArea);
+            }
+
+            function createToast(message, type = 'success') {
+                // Remove any existing toast
+                const existingToast = document.querySelector('.toast');
+                if (existingToast) {
+                    existingToast.remove();
+                }
+
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                toast.style.background = type === 'success' 
+                    ? 'linear-gradient(90deg, #10b981, #059669, #047857)' 
+                    : 'linear-gradient(90deg, #ef4444, #dc2626, #b91c1c)';
+                
+                const icon = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+                toast.innerHTML = `<i class="${icon}"></i> ${message}`;
+                document.body.appendChild(toast);
+                
+                // Remove the toast after 3.5 seconds
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.style.animation = 'fadeOut 0.5s ease forwards';
+                        setTimeout(() => {
+                            if (toast.parentNode) {
+                                toast.parentNode.removeChild(toast);
+                            }
+                        }, 500);
+                    }
+                }, 3500);
+            }
+
+            function showErrorMessage(message) {
+                errorText.textContent = message;
+                errorMessage.style.display = 'flex';
+                errorMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            function hideClearButton() {
+                clearBtn.classList.remove('show');
+            }
+
+            function renderHistory() {
+                if (history.length === 0) {
+                    historyContainer.style.display = 'none';
+                    return;
+                }
+                
+                historyContainer.style.display = 'block';
+                historyList.innerHTML = '';
+                
+                history.forEach(item => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    
+                    const headerDiv = document.createElement('div');
+                    headerDiv.className = 'history-header';
+                    
+                    const dateDiv = document.createElement('div');
+                    dateDiv.className = 'history-date';
+                    dateDiv.textContent = item.createdAt;
+                    
+                    headerDiv.appendChild(dateDiv);
+                    
+                    const originalDiv = document.createElement('div');
+                    originalDiv.className = 'history-original';
+                    
+                    const originalLabel = document.createElement('div');
+                    originalLabel.className = 'history-label';
+                    originalLabel.innerHTML = '<i class="fas fa-globe-americas"></i> URL Original:';
+                    
+                    const originalLink = document.createElement('a');
+                    originalLink.href = item.originalUrl;
+                    originalLink.target = '_blank';
+                    originalLink.rel = 'noopener noreferrer';
+                    originalLink.className = 'history-url original-url';
+                    originalLink.textContent = item.originalUrl.length > 70 ? 
+                        item.originalUrl.substring(0, 70) + '...' : 
+                        item.originalUrl;
+                    
+                    originalDiv.appendChild(originalLabel);
+                    originalDiv.appendChild(originalLink);
+                    
+                    const shortDiv = document.createElement('div');
+                    shortDiv.className = 'history-short';
+                    
+                    const shortLabel = document.createElement('div');
+                    shortLabel.className = 'history-label';
+                    shortLabel.innerHTML = '<i class="fas fa-cut"></i> URL Encurtada:';
+                    
+                    const shortLink = document.createElement('a');
+                    shortLink.href = item.shortenedUrl;
+                    shortLink.target = '_blank';
+                    shortLink.rel = 'noopener noreferrer';
+                    shortLink.className = 'history-url shortened-url';
+                    shortLink.textContent = item.shortenedUrl;
+                    
+                    shortDiv.appendChild(shortLabel);
+                    shortDiv.appendChild(shortLink);
+                    
+                    const actionsDiv = document.createElement('div');
+                    actionsDiv.className = 'history-actions';
+                    
+                    const copyHistoryBtn = document.createElement('button');
+                    copyHistoryBtn.className = 'history-copy-btn';
+                    copyHistoryBtn.innerHTML = '<i class="fas fa-copy"></i> Copiar';
+                    copyHistoryBtn.onclick = () => copyToClipboard(item.shortenedUrl);
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'history-delete-btn';
+                    deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Excluir';
+                    deleteBtn.dataset.id = item.id;
+                    
+                    actionsDiv.appendChild(copyHistoryBtn);
+                    actionsDiv.appendChild(deleteBtn);
+                    
+                    historyItem.appendChild(headerDiv);
+                    historyItem.appendChild(originalDiv);
+                    historyItem.appendChild(shortDiv);
+                    historyItem.appendChild(actionsDiv);
+                    
+                    historyList.appendChild(historyItem);
+                });
+            }
+
+            function deleteHistoryItem(id) {
+                history = history.filter(item => item.id !== parseInt(id));
+                saveData();
+                renderHistory();
+                createToast('🗑️ Item excluído do histórico', 'success');
+            }
+
+            function saveData() {
+                if (typeof(Storage) !== "undefined") {
+                    try {
+                        localStorage.setItem('gdShortenerHistory', JSON.stringify(history));
+                    } catch (e) {
+                        console.error('Error saving data: ', e);
+                        createToast('⚠️ Não foi possível salvar os dados', 'error');
+                    }
+                }
+            }
+
+            async function shortenUrlWithISGD(longUrl) {
+                try {
+                    const response = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.errorcode) {
+                        throw new Error(data.errormessage || 'Erro ao encurtar URL');
+                    }
+                    
+                    if (!data.shorturl) {
+                        throw new Error('URL encurtada não retornada');
+                    }
+                    
+                    return data.shorturl;
+                } catch (error) {
+                    console.error('Error with is.gd:', error);
+                    throw new Error('Falha ao processar sua URL');
+                }
+            }
+
+            async function shortenUrlWithTinyURL(longUrl) {
+                try {
+                    const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'text/plain',
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const shortUrl = await response.text();
+                    
+                    if (!shortUrl || shortUrl.includes('Error')) {
+                        throw new Error('Erro ao encurtar URL');
+                    }
+                    
+                    return shortUrl;
+                } catch (error) {
+                    console.error('Error with TinyURL:', error);
+                    throw new Error('Falha ao processar sua URL');
+                }
+            }
+
+            async function shortenUrl(longUrl) {
+                // Try is.gd first
+                try {
+                    const result = await shortenUrlWithISGD(longUrl);
+                    return result;
+                } catch (error) {
+                    console.log('is.gd failed, trying TinyURL...', error);
+                    
+                    // If is.gd fails, try TinyURL
+                    try {
+                        const result = await shortenUrlWithTinyURL(longUrl);
+                        return result;
+                    } catch (error2) {
+                        console.log('TinyURL also failed', error2);
+                        throw new Error('Não foi possível encurtar sua URL. Tente novamente mais tarde.');
+                    }
+                }
+            }
+
+            async function shortenUrlHandler() {
+                const url = urlInput.value.trim();
+                
+                if (!url) {
+                    showErrorMessage('Por favor, insira uma URL para encurtar');
+                    urlInput.focus();
+                    return;
+                }
+                
+                if (!isValidUrl(url)) {
+                    showErrorMessage('Por favor, insira uma URL válida (deve começar com http:// ou https://)');
+                    urlInput.focus();
+                    return;
+                }
+                
+                // Hide error message if visible
+                errorMessage.style.display = 'none';
+                
+                // Show loading state
+                loading.style.display = 'inline-block';
+                shortenBtn.disabled = true;
+                shortenBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+                
+                try {
+                    // Call the API
+                    const result = await shortenUrl(url);
+                    
+                    // Update UI with result
+                    shortUrl.textContent = result;
+                    shortUrl.href = result;
+                    resultContainer.style.display = 'block';
+                    
+                    // Scroll to result
+                    resultContainer.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                    
+                    // Add bounce animation to result container
+                    resultContainer.classList.add('bounce');
+                    setTimeout(() => {
+                        resultContainer.classList.remove('bounce');
+                    }, 1000);
+                    
+                    // Create history entry
+                    const newEntry = {
+                        id: Date.now(),
+                        originalUrl: url,
+                        shortenedUrl: result,
+                        createdAt: new Date().toLocaleString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })
+                    };
+                    
+                    // Add to history
+                    history.unshift(newEntry);
+                    renderHistory();
+                    saveData();
+                    
+                    // Clear input
+                    urlInput.value = '';
+                    hideClearButton();
+                    
+                    // Show success toast
+                    createToast('✨ URL encurtada com sucesso!', 'success');
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    showErrorMessage(error.message || 'Ocorreu um erro inesperado. Tente novamente.');
+                    createToast('❌ Falha ao encurtar URL. Tente novamente.', 'error');
+                } finally {
+                    // Reset button state
+                    loading.style.display = 'none';
+                    shortenBtn.disabled = false;
+                    shortenBtn.innerHTML = '<i class="fas fa-bolt"></i> Encurtar URL Agora';
+                }
+            }
+
+            // Initialize UI
+            renderHistory();
+            
+            // Add floating animation to logo icon
+            document.querySelector('.logo-icon').classList.add('floating');
+        });
+    </script>
+</body>
+</html>
